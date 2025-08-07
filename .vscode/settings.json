@@ -1,0 +1,25 @@
+{
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.suggest.autoImports": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "files.associations": {
+        "*.tsx": "typescriptreact",
+        "*.ts": "typescript"
+    },
+    "emmet.includeLanguages": {
+        "typescript": "html",
+        "typescriptreact": "html"
+    },
+    "tailwindCSS.includeLanguages": {
+        "typescript": "html",
+        "typescriptreact": "html"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+        ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ]
+} 
