@@ -1,218 +1,277 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, FileText, Calculator, Users, Award } from 'lucide-react';
-import { processarCSV, realizarApuracao, ResultadoApuração } from '../lib/apuracao';
+import { Upload, FileText, Users, Hash, AlertCircle } from 'lucide-react';
+import { processarCSV, realizarApuracao } from '@/lib/apuracao';
 
 export default function Home() {
   const [csvData, setCsvData] = useState<string>('');
-  const [serieSorteada, setSerieSorteada] = useState('47');
-  const [numeroSorteado, setNumeroSorteado] = useState('45668');
-  const [resultado, setResultado] = useState<ResultadoApuração | null>(null);
+  const [numeroSorteado, setNumeroSorteado] = useState('');
+  const [chavesIgnoradas, setChavesIgnoradas] = useState('');
+  const [resultado, setResultado] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState('');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setCsvData(text);
+        const content = e.target?.result as string;
+        setCsvData(content);
         setError('');
       };
       reader.readAsText(file);
     }
   };
 
-  const handleSubmit = () => {
-    if (!csvData) {
-      setError('Por favor, faça upload de um arquivo CSV');
-      return;
-    }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
+    setResultado(null);
 
     try {
+      if (!csvData) {
+        throw new Error('Por favor, faça upload do arquivo CSV');
+      }
+
+      if (!numeroSorteado) {
+        throw new Error('Por favor, informe o número sorteado');
+      }
+
+      if (numeroSorteado.length !== 7) {
+        throw new Error('O número sorteado deve ter exatamente 7 dígitos');
+      }
+
+      // Processar CSV
       const planilhaBase = processarCSV(csvData);
-      const resultadoApuracao = realizarApuracao(planilhaBase, serieSorteada, numeroSorteado);
+      
+      // Processar chaves ignoradas
+      const chavesIgnoradasArray = chavesIgnoradas
+        .split('\n')
+        .map(chave => chave.trim())
+        .filter(chave => chave.length > 0);
+
+      // Realizar apuração
+      const resultadoApuracao = realizarApuracao(planilhaBase, numeroSorteado, chavesIgnoradasArray);
+      
       setResultado(resultadoApuracao);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao processar dados');
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Apuração Shopee
+            Sistema de Apuração de Números da Sorte
           </h1>
           <p className="text-gray-600">
-            Sistema de apuração de números da sorte
+            Faça upload do arquivo CSV e informe o número sorteado para realizar a apuração
           </p>
         </div>
 
-        {/* Upload Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex items-center mb-4">
-            <Upload className="w-6 h-6 text-blue-500 mr-2" />
-            <h2 className="text-xl font-semibold">Upload do Arquivo CSV</h2>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Selecione o arquivo CSV
-            </label>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-          </div>
-
-          {csvData && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
-              <div className="flex items-center">
-                <FileText className="w-5 h-5 text-green-500 mr-2" />
-                <span className="text-green-700">Arquivo carregado com sucesso!</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Parameters Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex items-center mb-4">
-            <Calculator className="w-6 h-6 text-blue-500 mr-2" />
-            <h2 className="text-xl font-semibold">Parâmetros do Sorteio</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Série Sorteada
-              </label>
-              <input
-                type="text"
-                value={serieSorteada}
-                onChange={(e) => setSerieSorteada(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: 47"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Número Sorteado
-              </label>
-              <input
-                type="text"
-                value={numeroSorteado}
-                onChange={(e) => setNumeroSorteado(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: 45668"
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !csvData}
-            className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Processando...' : 'Realizar Apuração'}
-          </button>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-8">
-            <div className="flex items-center">
-              <span className="text-red-700">{error}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Results Section */}
-        {resultado && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Formulário */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center mb-6">
-              <Award className="w-6 h-6 text-blue-500 mr-2" />
-              <h2 className="text-xl font-semibold">Resultado da Apuração</h2>
-            </div>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+              <FileText className="mr-2" />
+              Configuração da Apuração
+            </h2>
 
-            {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{resultado.estatisticas.totalRegistros}</div>
-                <div className="text-sm text-gray-600">Total de Registros</div>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{resultado.estatisticas.serieUtilizada}</div>
-                <div className="text-sm text-gray-600">Série Utilizada</div>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{resultado.estatisticas.numerosEncontrados}</div>
-                <div className="text-sm text-gray-600">Números Anteriores</div>
-              </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">{resultado.estatisticas.seriesDisponiveis.length}</div>
-                <div className="text-sm text-gray-600">Séries Disponíveis</div>
-              </div>
-            </div>
-
-            {/* Winner Number */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold mb-2">Número Sorteado</h3>
-              <div className="text-3xl font-bold mb-2">{resultado.numeroSorteado.numero_sorte}</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-semibold">Série:</span> {resultado.numeroSorteado.serie}
-                </div>
-                <div>
-                  <span className="font-semibold">Número Base:</span> {resultado.numeroSorteado.numero_sorte_base}
-                </div>
-                <div>
-                  <span className="font-semibold">Produto:</span> {resultado.numeroSorteado.produto}
-                </div>
-              </div>
-            </div>
-
-            {/* Previous Numbers */}
-            <div>
-              <div className="flex items-center mb-4">
-                <Users className="w-5 h-5 text-blue-500 mr-2" />
-                <h3 className="text-lg font-semibold">9 Números Anteriores</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {resultado.numerosAnteriores.map((numero, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        Série {numero.serie}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Upload do CSV */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Arquivo CSV
+                </label>
+                <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                  csvData 
+                    ? 'border-green-400 bg-green-50' 
+                    : 'border-gray-300 bg-gray-50 hover:border-blue-400'
+                }`}>
+                  <Upload className={`mx-auto h-12 w-12 mb-4 ${
+                    csvData ? 'text-green-500' : 'text-gray-400'
+                  }`} />
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="csv-upload"
+                  />
+                  <label htmlFor="csv-upload" className="cursor-pointer">
+                    {csvData ? (
+                      <span className="text-green-600 font-medium">
+                        Arquivo carregado ✓
                       </span>
+                    ) : (
+                      <>
+                        <span className="text-blue-600 hover:text-blue-800 font-medium">
+                          Clique para fazer upload
+                        </span>
+                        <span className="text-gray-500"> ou arraste o arquivo aqui</span>
+                      </>
+                    )}
+                  </label>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Formato esperado: chave_contato, data, produto, data_referencia, numero_sorte
+                  </p>
+                </div>
+              </div>
+
+              {/* Número Sorteado */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Número Sorteado (7 dígitos)
+                </label>
+                <input
+                  type="text"
+                  value={numeroSorteado}
+                  onChange={(e) => setNumeroSorteado(e.target.value.replace(/\D/g, '').slice(0, 7))}
+                  placeholder="0000000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
+                  maxLength={7}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Digite exatamente 7 dígitos (pode começar com zero)
+                </p>
+              </div>
+
+              {/* Chaves Ignoradas */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chaves de Contato Ignoradas
+                </label>
+                <textarea
+                  value={chavesIgnoradas}
+                  onChange={(e) => setChavesIgnoradas(e.target.value)}
+                  placeholder="Digite uma chave por linha para ignorar na seleção"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Uma chave por linha. Deixe vazio se não houver chaves para ignorar.
+                </p>
+              </div>
+
+              {/* Botão Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Processando...' : 'Realizar Apuração'}
+              </button>
+            </form>
+          </div>
+
+          {/* Resultados */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+              <Hash className="mr-2" />
+              Resultado da Apuração
+            </h2>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                  <p className="text-red-800">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {resultado && (
+              <div className="space-y-6">
+                {/* Número Sorteado */}
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                    Número Sorteado Principal
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600">Número:</span>
+                      <span className="ml-2 font-mono text-lg text-gray-900">{resultado.numeroSorteado.numero_sorte}</span>
                     </div>
-                    <div className="text-lg font-bold text-gray-800 mb-2">
-                      {numero.numero_completo}
-                    </div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {numero.chave_contato}
+                    <div>
+                      <span className="font-medium text-gray-600">Chave:</span>
+                      <span className="ml-2 font-mono text-xs break-all text-gray-700">{resultado.numeroSorteado.chave_contato}</span>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Números Selecionados */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Números Selecionados ({resultado.numerosSelecionados.length} total)
+                  </h3>
+                  <div className="max-h-96 overflow-y-auto">
+                    <div className="grid gap-2">
+                      {resultado.numerosSelecionados.map((item: any, index: number) => (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-md border ${
+                            item.posicao === 1
+                              ? 'bg-blue-50 border-blue-200'
+                              : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                item.posicao === 1
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                #{item.posicao}
+                              </span>
+                              <span className="font-mono text-lg text-gray-900">{item.numero}</span>
+                            </div>
+                            <span className="text-xs text-gray-600 font-mono break-all">
+                              {item.chave_contato}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Estatísticas */}
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Estatísticas</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600">Total de registros:</span>
+                      <span className="ml-2 text-gray-900">{resultado.estatisticas.totalRegistros.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Chaves ignoradas:</span>
+                      <span className="ml-2 text-gray-900">{resultado.estatisticas.chavesIgnoradas}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Números encontrados:</span>
+                      <span className="ml-2 text-gray-900">{resultado.estatisticas.numerosEncontrados}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {!resultado && !error && (
+              <div className="text-center text-gray-500 py-12">
+                <Users className="mx-auto h-12 w-12 mb-4" />
+                <p>Faça upload do arquivo CSV e configure os parâmetros para ver os resultados</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
