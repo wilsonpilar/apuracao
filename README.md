@@ -1,6 +1,6 @@
-# Apuração Shopee
+# Apuração de Números da Sorte
 
-Sistema web para apuração de números da sorte da Shopee, desenvolvido com Next.js e TypeScript.
+Sistema web para apuração de números da sorte, desenvolvido com Next.js e TypeScript.
 
 ## 🚀 Funcionalidades
 
@@ -30,7 +30,7 @@ Sistema web para apuração de números da sorte da Shopee, desenvolvido com Nex
 ```bash
 # Clone o repositório
 git clone <repository-url>
-cd apuracao-shopee
+cd apuracao-numeros-sorte
 
 # Instale as dependências
 npm install
@@ -96,4 +96,4 @@ npm run lint     # Verificação de código
 
 ## 📝 Licença
 
-Este projeto é de uso interno da Shopee.
+Este projeto é de uso interno.
